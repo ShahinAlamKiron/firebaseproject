@@ -1,18 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebaseproject/login.dart';
-import 'package:firebaseproject/welcome.dart';
+import 'package:firebaseproject/LogIn_Page.dart';
+import 'package:firebaseproject/Home_Page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebaseproject/textdesign.dart';
 
-class Register extends StatefulWidget {
+class Register_Page extends StatefulWidget {
   @override
-  _RegisterState createState() => _RegisterState();
+  _Register_PageState createState() => _Register_PageState();
 }
 
-class _RegisterState extends State<Register> {
+class _Register_PageState extends State<Register_Page> {
   String email;
 
+  GlobalKey<ScaffoldState>sangbar=GlobalKey<ScaffoldState>();
   FirebaseAuth _auth = FirebaseAuth.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _displayName = TextEditingController();
@@ -32,6 +33,7 @@ class _RegisterState extends State<Register> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: sangbar,
       appBar: AppBar(
         title: Text('Welcome Register page'),
         centerTitle: true,
@@ -72,10 +74,6 @@ class _RegisterState extends State<Register> {
                           if (value.isEmpty) {
                             return 'Please  Enter full name';
                           }
-                          if (value.length >= 4 || value.length <= 10) {
-                            return 'name must be at least 4 character and maximum 10 character';
-                          }
-
                           return null;
                         },
                       ),
@@ -118,9 +116,6 @@ class _RegisterState extends State<Register> {
                         validator: (String value) {
                           if (value.isEmpty) {
                             return 'Please a Enter Password';
-                          }
-                          if (value.length >= 4) {
-                            return 'Please enter at least 4 character';
                           }
                           return null;
                         },
@@ -207,25 +202,25 @@ class _RegisterState extends State<Register> {
   }
 
   void _registerAccount() async {
-    final User user = (await _auth.createUserWithEmailAndPassword(
-      email: _emailController.text,
-      password: _passwordController.text,
-    ))
-        .user;
 
-    if (user != null) {
-      if (!user.emailVerified) {
-        await user.sendEmailVerification();
+    if (_formKey.currentState.validate()) {
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text, password:_passwordController.text,);
+        User user=userCredential.user;
+        assert(user.uid!=null);
+        if(!user.emailVerified){
+          await user.sendEmailVerification();}
+        user.updateProfile(displayName: _displayName.text);
+        Navigator.push(context, MaterialPageRoute(builder: (context)=>SignIn()));
+      } on FirebaseAuthException catch (e) {
+        sangbar.currentState.showSnackBar(SnackBar(
+            backgroundColor: Colors.deepOrange,
+            content: Text(e.message)));
       }
-      await user.updateProfile(displayName: _displayName.text);
-      final user1 = _auth.currentUser;
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => MainPage(
-                user: user1,
-              )));
-    } else {
-      _isSuccess = false;
+
     }
+
   }
 
   @override
